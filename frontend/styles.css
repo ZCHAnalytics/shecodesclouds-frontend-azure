@@ -95,6 +95,12 @@ ul {
     margin-bottom: 1.5rem;
 }
 
+.resume-section ul li a {
+  display: inline;       /* ensure link stays inline */
+  line-height: 1;        /* prevent extra height */
+  vertical-align: baseline; /* align with text */
+}
+
 .resume-section ul {
     list-style-type: disc;
     padding-left: 20px;
