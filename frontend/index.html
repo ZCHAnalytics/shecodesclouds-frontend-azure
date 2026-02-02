@@ -23,8 +23,7 @@
       <h2 id="skills-heading">Skills & Certifications</h2>
       <ul>
         <li><strong>Certifications:</strong> AZ-900 • AI-900</li>
-        <li><strong>Cloud & <abbr title="Infrastructure as Code">IaC</abbr>:</strong> Azure • Terraform / <a href="https://github.com/ZCHAnalytics/microsoft-challenge-data-skills" target="_blank" rel="noopener noreferrer">Bicep</a> • GitHub Actions • Azure DevOps</li>
-        <li><strong>Serverless:</strong> Azure Functions • Cosmos DB (Table API)</li>
+        <li><strong>Cloud Platforms:</strong> AWS (Lambda, API Gateway, DynamoDB, CloudFront, S3, IAM, CloudWatch) • Azure (Functions, Cosmos DB, Storage, Terraform / <a href="https://github.com/ZCHAnalytics/microsoft-challenge-data-skills" target="_blank" rel="noopener noreferrer">Bicep</a>, DevOps)</li>
         <li><strong>Languages:</strong> Python • PowerShell • Bash • <abbr title="Structured Query Language">SQL</abbr></li>
         <li><strong>Containers & Orchestration:</strong> Docker • Kubernetes</li>
         <li><strong>Security:</strong> Identity & Access • Secure CI/CD • <a href="https://www.credly.com/badges/76cc4efc-fb43-42a5-afb1-feb0925c7769/public_url" target="_blank" rel="noopener noreferrer">Cisco Introduction to CyberSecurity</a></li>
@@ -38,41 +37,38 @@
       <h3>Cloud Projects</h3>
       <ul>
         <li>
-          <strong>
-            <a href="https://github.com/ZCHAnalytics/cloud-resume-challenge" target="_blank" rel="noopener noreferrer">
+          <strong><a href="https://github.com/ZCHAnalytics/cloud-resume-challenge" target="_blank" rel="noopener noreferrer">
               Cloud Resume Challenge (Azure, Terraform, <abbr title="Continuous Integration/Continuous Deployment">CI/CD</abbr>)
-              <span class="sr-only">(opens in new tab)</span>
-            </a>
-          </strong>
+              <span class="sr-only">(opens in new tab)</span></a></strong>
           <ul>
             <li>Hosted static resume site on Azure with serverless visitor tracking via Azure Functions and Cosmos DB.</li>
             <li>Infrastructure as Code using Terraform with remote state in Azure Storage, deployed via Azure DevOps Pipelines.</li>
             <li>CI/CD implemented with Azure DevOps and GitHub Actions, including Cypress E2E tests.</li>
             <li>Security features: <abbr title="Software Bill of Materials">SBOM</abbr> generation (Syft), vulnerability scanning (Grype, Bandit, Semgrep), and minimal <abbr title="Role-Based Access Control">RBAC</abbr>.</li>
-            <li>
-              <strong>GitHub Actions versions:</strong>
+            <li><strong>GitHub Actions versions:</strong>
               <a href="https://github.com/ZCHAnalytics/shecodesclouds-frontend" target="_blank" rel="noopener noreferrer">
-                Frontend<span class="sr-only">(opens in new tab)</span>
-              </a> |
+                Frontend<span class="sr-only">(opens in new tab)</span></a> |
               <a href="https://github.com/ZCHAnalytics/shecodesclouds-backend" target="_blank" rel="noopener noreferrer">
-                Backend<span class="sr-only">(opens in new tab)</span>
-              </a>
+                Backend<span class="sr-only">(opens in new tab)</span></a>
             </li>
           </ul>
         </li>
 
-        <li>
-          <strong>
-            <a href="https://github.com/ZCHAnalytics/azure-database-migration" target="_blank" rel="noopener noreferrer">
-              Azure Database Migration
-              <span class="sr-only">(opens in new tab)</span>
-            </a>
-          </strong>
-          <ul>
-            <li>Restored production <abbr title="Database">DB</abbr> into a dev-safe environment; implemented disaster recovery with Entra ID authentication.</li>
+        <li><strong><a href="https://github.com/ZCHAnalytics/azure-database-migration" target="_blank" rel="noopener noreferrer">
+              Azure Database Migration <span class="sr-only">(opens in new tab)</span></a></strong>
+          <ul><li>Restored production <abbr title="Database">DB</abbr> into a dev-safe environment; implemented disaster recovery with Entra ID authentication.</li>
           </ul>
         </li>
-      </ul>
+         <li><strong><a href="https://github.com/ZCHAnalytics/aws-cloud-resume-challenge" target="_blank" rel="noopener noreferrer"> 
+              AWS Cloud Resume Challenge with DevOps and Security Mods<span class="sr-only">(opens in new tab)</span></a></strong>
+          <ul>
+            <li> Static site hosted on S3, distributed globally via CloudFront with HTTPS.</li>
+            <li> Serverless API using AWS Lambda (Python), API Gateway (HTTP API), and DynamoDB for visitor tracking with unique visitor detection.</li>
+            <li> Implemented IAM least privilege policies, removed overly permissive access to DynamoDB.</li>
+            <li> CloudWatch alarms for Lambda errors, and traffic spikes (DoS detection) with SNS email notifications.</li>
+          </ul>
+         </li>
+        
 
       <h3>Data Projects</h3>
       <ul>
