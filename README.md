@@ -17,7 +17,7 @@ The frontend is a modern, responsive static site built with HTML, CSS, and JavaS
   - Frontend waits for CDN availability before starting tests.
   - Tests configured with environment variables to target live API endpoints.
 - Used `setup-node@v3` and `npm audit` in CI to scan for vulnerable dependencies.
-- Manual triggering and workflow run triggers configured for flexible test execution.
+- Manual triggering and workflow run triggers.
 
 ---
 

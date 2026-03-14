@@ -46,14 +46,6 @@ override.tf.json
 terraform.rc
 **/.terraform/*
 
-# Node/NPM
-node_modules/
-**/node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-
 # Cypress - Exclude entire cypress folder except the e2e tests we need
 cypress/*
 !cypress/e2e/
@@ -90,3 +82,5 @@ logs/
 
 
 old/
+
+fixes.md
