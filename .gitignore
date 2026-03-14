@@ -1,8 +1,8 @@
-git # Old cypress learning folder
-cypress-realworld-testing-course-app/
+
 
 post.md 
-fixes_azure_creds.md 
+fixes_sp_tf_cred.md
+fixes_sp_webapp_cred.md  
 fixes_depends.md 
 github_cred.json
 
@@ -19,6 +19,8 @@ __pycache__/
 htmlcov/
 dist/
 build/
+
+
 
 # Python Environments
 .env
@@ -49,10 +51,11 @@ override.tf.json
 terraform.rc
 **/.terraform/*
 
-# Cypress - Exclude entire cypress folder except the e2e tests we need
+# Cypress
 cypress/*
 !cypress/e2e/
 !cypress/e2e/api.cy.js
+node_modules/
 
 # VS Code
 .vscode/
