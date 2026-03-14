@@ -84,7 +84,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}    # Auth to Azure with SP
+          creds: ${{ secrets.AZURE_CREDENTIALS_TFSTATE }}    # Auth to Azure with SP
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2      #   Ensure Terraform is available
@@ -114,5 +114,5 @@ jobs:
       - name: Output Details
         working-directory: iaac
         run: |
-          echo "### Frontend Infrastructure Deployed! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend Infrastructure Deployed!" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend URL**: $(terraform output -raw static_website_url)" >> $GITHUB_STEP_SUMMARY
