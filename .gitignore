@@ -2,6 +2,9 @@ git # Old cypress learning folder
 cypress-realworld-testing-course-app/
 
 post.md 
+fixes_azure_creds.md 
+fixes_depends.md 
+github_cred.json
 
 # Python
 __pycache__/

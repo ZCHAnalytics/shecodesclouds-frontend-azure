@@ -63,7 +63,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}      # JSON secret containing SP credentials
+          creds: ${{ secrets.AZURE_CREDENTIALS_WEBAPP }}      # JSON secret containing SP credentials
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2        # Installs Terraform CLI
