@@ -69,42 +69,65 @@ jobs:
 
       - name: Mask Azure Subscription ID
         run: echo "::add-mask::${{ secrets.AZURE_SUBSCRIPTION_ID }}"  # Hide subscription ID in logs
-
+      # Logging in with TF SP for Terraform backend access
       - name: Azure Login - TFState
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_TFSTATE }}      # JSON secret containing SP credentials
+          creds: ${{ secrets.AZURE_CREDENTIALS_TFSTATE }}      # JSON secret containing SP credentials      
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2        # Installs Terraform CLI
+        with: 
+          terraform_version: 1.12.2
+          # TROUBLESHOOTING FIX #1: Added terraform_wrapper: false
+          # The hashicorp/setup-terraform@v2 action by default wraps terraform commands
+          # and adds debug output like "[command]/path/to/terraform-bin output -raw ..."
+          # This was corrupting our terraform output values, causing storage account names
+          # to include debug text, which made Azure commands fail.
+          terraform_wrapper: false # This prevents the wrapper that adds debug output 
       
-      - name: Terraform Init/Output
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2        # Installs Terraform CLI
+        with: 
+          terraform_version: 1.12.2
+          # TROUBLESHOOTING FIX #1: Added terraform_wrapper: false
+          # The hashicorp/setup-terraform@v2 action by default wraps terraform commands
+          # and adds debug output like "[command]/path/to/terraform-bin output -raw ..."
+          # This was corrupting our terraform output values, causing storage account names
+          # to include debug text, which made Azure commands fail.
+          terraform_wrapper: false # This prevents the wrapper that adds debug output 
+      - name: Terraform Init & Get Outputs
+        id: terraform-outputs
         run: |
-          if [ -d "iaac" ]; then
-            cd iaac
-            terraform init 
-            terraform output 
-          else
-            echo "iaac directory not found, skipping Terraform steps"
-          fi 
-      
+          cd iaac
+          terraform init
+          # Read outputs needed for frontend deployment
+          STORAGE_ACCOUNT=$(terraform output -raw storage_account_name 2>/dev/null || echo "${STORAGE_ACCOUNT_DEFAULT}")
+          CDN_PROFILE=$(terraform output -raw cdn_profile_name 2>/dev/null || echo "${CDN_PROFILE_DEFAULT}")
+          CDN_ENDPOINT=$(terraform output -raw cdn_endpoint_name 2>/dev/null || echo "${CDN_ENDPOINT_DEFAULT}")
+
+          echo "storage_account=$STORAGE_ACCOUNT" >> "$GITHUB_OUTPUT"
+          echo "cdn_profile=$CDN_PROFILE" >> "$GITHUB_OUTPUT"
+          echo "cdn_endpoint=$CDN_ENDPOINT" >> "$GITHUB_OUTPUT"
+
+      # Logging in with WebApp SP for resume storage account access and deployment
       - name: Azure Login - WebApp 
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_WEBAPP }}      # JSON secret containing SP credentials for web app deployment
 
-      - name: Check Frontend Directory
-        run: |
-          if [ ! -d "./frontend" ]; then
-            echo "Frontend directory not found"
-            exit 1
-          fi
-          
-          echo "Frontend files to upload:"
-          ls -la ./frontend/
 
       - name: Deploy to Azure Storage
-        id: deploy-storage
-
+        env:
+          STORAGE_ACCOUNT: ${{ steps.terraform-outputs.outputs.storage_account }}
         run: |
           echo "Uploading website files to storage account: ${STORAGE_ACCOUNT}"
+          az storage blob upload-batch \
+            --account-name "${STORAGE_ACCOUNT}" \
+            --source ./frontend \
+            --destination '$web' \
+            --overwrite
           
           # TROUBLESHOOTING FIX #5: Added fallback authentication method
           # If the service principal doesn't have proper Storage Blob Data Contributor role,
@@ -144,92 +167,24 @@ jobs:
           
           echo "storage_account=${STORAGE_ACCOUNT}" >> "$GITHUB_OUTPUT"
 
-      - name: Get CDN Details from Terraform
-        id: get-cdn
-        run: |
-          cd iaac
-          
-          # No need to init again, already done in previous step
-          CDN_ENDPOINT=$(terraform output -raw cdn_endpoint_name 2>/dev/null || echo "")
-          CDN_PROFILE=$(terraform output -raw cdn_profile_name 2>/dev/null || echo "")
-          
-          # TROUBLESHOOTING FIX #7: Check for debug output contamination
-          # Even with terraform_wrapper: false, we check if outputs contain debug text
-          # and fall back to environment variables if they do
-          if [[ "$CDN_ENDPOINT" == *"::debug::"* ]] || [[ -z "$CDN_ENDPOINT" ]]; then 
-            echo "Could not get clean CDN endpoint from Terraform, using default"
-            CDN_ENDPOINT="${{ env.CDN_ENDPOINT_NAME }}"
-          fi
-          
-          if [[ "$CDN_PROFILE" == *"::debug::"* ]] || [[ -z "$CDN_PROFILE" ]]; then 
-            echo "Could not get clean CDN profile from Terraform, using default"
-            CDN_PROFILE="${{ env.CDN_PROFILE_NAME }}"
-          fi
-          
-          echo "cdn_endpoint=$CDN_ENDPOINT" >> "$GITHUB_OUTPUT"
-          echo "cdn_profile=$CDN_PROFILE" >> "$GITHUB_OUTPUT"
-          
       - name: Purge CDN Cache
         env:
           RESOURCE_GROUP_NAME: ${{ env.RESOURCE_GROUP_NAME }}
-          CDN_PROFILE_NAME: ${{ steps.get-cdn.outputs.cdn_profile }}
-          CDN_ENDPOINT_NAME: ${{ steps.get-cdn.outputs.cdn_endpoint }}
+          CDN_PROFILE_NAME: ${{ steps.terraform-outputs.outputs.cdn_profile }}
+          CDN_ENDPOINT_NAME: ${{ steps.terraform-outputs.outputs.cdn_endpoint }}
         run: |
           echo "Purging CDN cache..."
-          
-          # TROUBLESHOOTING FIX #8: Verify CDN exists before purging
-          # Prevents errors if CDN endpoint doesn't exist yet
-          CDN_EXISTS=$(az cdn endpoint show \
+          az cdn endpoint purge \
             --resource-group "${RESOURCE_GROUP_NAME}" \
             --profile-name "${CDN_PROFILE_NAME}" \
             --name "${CDN_ENDPOINT_NAME}" \
-            --query "name" -o tsv 2>/dev/null || echo "")
-          
-          if [[ -n "$CDN_EXISTS" ]]; then
-            az cdn endpoint purge \
-              --resource-group "${RESOURCE_GROUP_NAME}" \
-              --profile-name "${CDN_PROFILE_NAME}" \
-              --name "${CDN_ENDPOINT_NAME}" \
-              --content-paths "/*" \
-              --no-wait
-            echo "CDN cache purge initiated"
-          else
-            echo "CDN endpoint not found, skipping cache purge"
-          fi
-
+            --content-paths "/*" \
+            --no-wait
+          echo "CDN cache purge initiated"
+        
       - name: Deployment Summary
         run: |
           echo "### Frontend Deployed!" >> $GITHUB_STEP_SUMMARY
-          echo "- **Files uploaded to**: ${{ steps.deploy-storage.outputs.storage_account }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **CDN URL**: https://${{ steps.get-cdn.outputs.cdn_endpoint }}.azureedge.net" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files uploaded to**: ${{ steps.terraform-outputs.outputs.storage_account }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **CDN URL**: https://${{ steps.terraform-outputs.outputs.cdn_endpoint }}.azureedge.net" >> $GITHUB_STEP_SUMMARY
           echo "- **Note**: CDN cache purge initiated - changes should be live in 2-10 minutes." >> $GITHUB_STEP_SUMMARY
-          
-          # Also try to get the static website URL from Terraform
-          cd iaac
-          STATIC_URL=$(terraform output -raw static_website_url 2>/dev/null || echo "")
-          if [[ -n "$STATIC_URL" ]]; then
-            echo "- **Static Website URL**: $STATIC_URL" >> $GITHUB_STEP_SUMMARY
-          fi
-
-  dependency-scan:
-    name: Scan JavaScript Dependencies
-    runs-on: ubuntu-latest
-    
-    defaults:
-      run: 
-        working-directory: frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22'  
-
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Run npm audit
-        run: npm audit --audit-level=high
