@@ -70,83 +70,25 @@ jobs:
       - name: Mask Azure Subscription ID
         run: echo "::add-mask::${{ secrets.AZURE_SUBSCRIPTION_ID }}"  # Hide subscription ID in logs
 
-      - name: Azure Login
+      - name: Azure Login - TFState
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_TFSTATE }}      # JSON secret containing SP credentials
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2        # Installs Terraform CLI
-        with: 
-          terraform_version: 1.12.2
-          # TROUBLESHOOTING FIX #1: Added terraform_wrapper: false
-          # The hashicorp/setup-terraform@v2 action by default wraps terraform commands
-          # and adds debug output like "[command]/path/to/terraform-bin output -raw ..."
-          # This was corrupting our terraform output values, causing storage account names
-          # to include debug text, which made Azure commands fail.
-          terraform_wrapper: false # This prevents the wrapper that adds debug output 
-
-      - name: Get Storage Account Name
-        id: get-storage
+      
+      - name: Terraform Init/Output
         run: |
-          
-          # Check if iaac directory exists
-          if [ ! -d "iaac" ]; then
-            echo "iaac directory not found"
-            echo "storage_account=${{ env.STORAGE_ACCOUNT_NAME }}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          cd iaac
-                    
-          # Get the storage account name from Terraform outputs
-          if terraform state list > /dev/null 2>&1; then
-            STORAGE_ACCOUNT=$(terraform output -raw storage_account_name 2>/dev/null || echo "")
-            
-            if [[ -z "$STORAGE_ACCOUNT" || "$STORAGE_ACCOUNT" == *"::debug::"* ]]; then
-              echo "Could not get storage account from Terraform state, using default"
-              STORAGE_ACCOUNT="${{ env.STORAGE_ACCOUNT_NAME }}"
-            else
-              echo "Got storage account from Terraform: $STORAGE_ACCOUNT"
-            fi
+          if [ -d "iaac" ]; then
+            cd iaac
+            terraform init 
+            terraform output 
           else
-            echo "No Terraform state found, using default"
-            STORAGE_ACCOUNT="${{ env.STORAGE_ACCOUNT_NAME }}"
-          fi
-          
-          echo "storage_account=$STORAGE_ACCOUNT" >> "$GITHUB_OUTPUT"
-
-      # TROUBLESHOOTING FIX #4: Added verification steps
-      # These steps ensure the storage account exists and has static website enabled
-      # before attempting to upload files, providing better error messages
-      - name: Verify Storage Account and Static Website
-        run: |
-          STORAGE_ACCOUNT="${{ steps.get-storage.outputs.storage_account }}"
-          
-          # Check if storage account exists
-          STORAGE_EXISTS=$(az storage account show \
-            --name "${STORAGE_ACCOUNT}" \
-            --query "name" -o tsv 2>/dev/null || echo "")
-          
-          if [[ -z "$STORAGE_EXISTS" ]]; then
-            echo "Storage account not found: ${STORAGE_ACCOUNT}"
-            exit 1
-          fi
-          
-          echo "Storage account verified: $STORAGE_EXISTS"
-          
-          # Check if static website is enabled
-          STATIC_WEBSITE=$(az storage blob service-properties show \
-            --account-name "${STORAGE_ACCOUNT}" \
-            --auth-mode login \
-            --query "staticWebsite.enabled" -o tsv 2>/dev/null || echo "false")
-          
-          if [[ "$STATIC_WEBSITE" != "true" ]]; then
-            echo "Static website is not enabled on storage account"
-            exit 1
-          fi
-          
-          echo "Static website is enabled"
+            echo "iaac directory not found, skipping Terraform steps"
+          fi 
+      
+      - name: Azure Login - WebApp 
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_WEBAPP }}      # JSON secret containing SP credentials for web app deployment
 
       - name: Check Frontend Directory
         run: |
@@ -160,8 +102,7 @@ jobs:
 
       - name: Deploy to Azure Storage
         id: deploy-storage
-        env:
-          STORAGE_ACCOUNT: ${{ steps.get-storage.outputs.storage_account }}
+
         run: |
           echo "Uploading website files to storage account: ${STORAGE_ACCOUNT}"
           

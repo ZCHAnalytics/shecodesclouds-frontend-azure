@@ -5,6 +5,7 @@ fixes_sp_tf_cred.md
 fixes_sp_webapp_cred.md  
 fixes_depends.md 
 github_cred.json
+frontend-deploy-old.yml
 
 # Python
 __pycache__/
