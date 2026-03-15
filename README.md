@@ -1,23 +1,53 @@
 
 # Azure Cloud Resume Challenge — Frontend Website
 
-This repository hosts the frontend for the Azure Cloud Resume Challenge: a static resume website enhanced with a dynamic visitor counter connected to the backend API.
+This repository contains the frontend for the Azure Cloud Resume Challenge: a static resume website enhanced with a serverless visitor counter running on the backend API. 
 
-## Overview
+The project demonstrates cloud architecture, Infrastructure as a Code, CI/CD automation, and secure cloud deployment practices. 
 
-The frontend is a modern, responsive static site built with HTML, CSS, and JavaScript, hosted on **Azure Static Web Apps** and served via an **Azure CDN**.
+## Architecture Overview
+The website is deployed as a static site on Azure Storage and available globalle thourhg Azure CDN. Frontend files connects with a backend API hosted on Azure Functions, recording and returning unique visitors count stored in CosmosDB.
 
-### Challenge Steps Completed & Enhancements
+Web browser
+   │
+   ▼
+Azure CDN
+   │
+   ▼
+Azure Storage Static Website ($web)
+   │
+   ▼
+Visitor Counter JavaScript
+   │
+   ▼
+Azure Function API
+   │
+   ▼
+Azure Cosmos DB
 
-- Hosted static frontend content in Azure Blob Storage configured as a **Static Website**.
-- Served through Azure CDN to improve performance and reliability.
-- Connected to backend API (Azure Function + Cosmos DB) for **unique visitor count** display.
-- **Cypress End-to-End (E2E) tests** integrated in GitHub Actions workflows:
-  - E2E tests run only after backend CI/CD workflow succeeds.
-  - Frontend waits for CDN availability before starting tests.
-  - Tests configured with environment variables to target live API endpoints.
-- Used `setup-node@v3` and `npm audit` in CI to scan for vulnerable dependencies.
-- Manual triggering and workflow run triggers.
+## Technologies Used
 
----
+### Frontend
 
+HTML, CSS, JavaScript
+
+### Cloud Platform
+Azure Storage Static Website, Azure CDN, Azure Functions, Azure Cosmos DB
+
+### Infrastructure as Code
+Terraform, remote state stored in Azure Storage, 
+
+###
+CI/CD, GitHub Actions, automated deployments on push to main
+
+### Testing
+
+Cypress End-to-End tests
+
+### Security
+
+Service principals with least-privilege RBAC with separate identities for:
+- Terraform state access
+- frontend deployment
+
+SBOM generation with Syft, vulnerability scanning with Grype
